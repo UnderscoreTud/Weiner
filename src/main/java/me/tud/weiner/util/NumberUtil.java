@@ -6,4 +6,25 @@ public class NumberUtil {
         return Character.digit(c, radix) >= 0;
     }
 
+    public static int compare(Number leftOperand, Number rightOperand) {
+        boolean[] isInteger = {isInteger(leftOperand), isInteger(rightOperand)};
+        if (isInteger[0] && isInteger[1]) {
+            return Long.compare(leftOperand.longValue(), rightOperand.longValue());
+        } else if (isInteger[0]) {
+            return (leftOperand.longValue() < rightOperand.doubleValue()) ? -1 : ((leftOperand.longValue() == rightOperand.doubleValue()) ? 0 : 1);
+        } else if (isInteger[1]) {
+            return (leftOperand.doubleValue() < rightOperand.longValue()) ? -1 : ((leftOperand.doubleValue() == rightOperand.longValue()) ? 0 : 1);
+        } else {
+            return Double.compare(leftOperand.doubleValue(), rightOperand.doubleValue());
+        }
+    }
+
+    public static boolean isInteger(Number... numbers) {
+        for (Number number : numbers) {
+            if (number.longValue() != number.doubleValue())
+                return false;
+        }
+        return true;
+    }
+
 }

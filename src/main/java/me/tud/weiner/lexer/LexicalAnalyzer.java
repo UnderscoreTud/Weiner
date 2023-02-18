@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 public class LexicalAnalyzer {
 
-    private static final String[] KEYWORDS = {"else", "when", "giveback", "for", "progress", "leave"};
+    private static final String[] KEYWORDS = {"else", "when", "giveback", "for", "progress", "leave", "function"};
 
     private final String data;
     private final LinkedList<String> lines;
@@ -25,6 +25,7 @@ public class LexicalAnalyzer {
     private int index = 0;
     private int cachedLineIndex = lineIndex;
     private int cachedIndex = index;
+    private boolean whitespace = false;
 
     public LexicalAnalyzer(@NotNull InputStream inputStream) throws IOException {
         this(new String(inputStream.readAllBytes()));
@@ -33,21 +34,19 @@ public class LexicalAnalyzer {
     public LexicalAnalyzer(@NotNull String data) {
         this.data = data;
         this.lines = data.lines().collect(Collectors.toCollection(LinkedList::new));
-        this.line = lines.get(0);
+        this.line = lines.isEmpty() ? "" : lines.get(0);
     }
 
     public LinkedList<Token> lex() {
         LinkedList<Token> tokenList = new LinkedList<>();
-        Token token = null;
+        Token token;
         do {
-            TokenType previousType = token != null ? token.type() : null;
             token = nextToken();
-
-            while (previousType == TokenType.WHITESPACE && token.is(TokenType.WHITESPACE))
-                token = nextToken();
-
+            whitespace = false;
             tokenList.add(token);
         } while (!token.is(TokenType.EOF));
+        tokenList.add(tokenList.size() - 1, newToken(TokenType.EOL));
+//        System.out.println(tokenList);
         return tokenList;
     }
 
@@ -55,15 +54,17 @@ public class LexicalAnalyzer {
         if (!hasNext())
             return newToken(TokenType.EOF);
 
-        cacheIndex();
         char current = next();
+
+        while (Character.isWhitespace(current) && current != '\n') {
+            whitespace = true;
+            current = next();
+        }
+        mark();
 
         switch (current) {
             case '\n':
                 return newToken(TokenType.EOL);
-            case ' ':
-            case '\t':
-                return newToken(TokenType.WHITESPACE);
             case '{':
                 return newToken(TokenType.L_CURLY_BRACE, "{");
             case '}':
@@ -93,6 +94,12 @@ public class LexicalAnalyzer {
                 return newToken(TokenType.IF, "?");
             case '$':
                 return newToken(TokenType.STATEMENT, "$");
+            case ':':
+                return newToken(TokenType.COLON, ":");
+            case '@':
+                return newToken(TokenType.INDEX, "@");
+            case '!':
+                return newToken(TokenType.NEGATE, "!");
             case '"':
                 return handleQuotedString();
             case '.':
@@ -100,6 +107,9 @@ public class LexicalAnalyzer {
                     next();
                     return newToken(TokenType.DOUBLE_DOT);
                 }
+                break;
+            case ',':
+                return newToken(TokenType.COMMA);
         }
 
         if (Character.isDigit(current) || current == '.')
@@ -107,25 +117,25 @@ public class LexicalAnalyzer {
 
         Token token = null;
 
-        cacheIndex();
+        mark();
         if (current == 't' || current == 'f') {
             token = handleBoolean();
         }
 
         if (token == null) {
-            revertToCachedIndex();
+            reset();
             token = handleKeyword();
         }
 
         if (token == null) {
-            revertToCachedIndex();
+            reset();
             token = handleIdentifier();
         }
 
         if (token != null)
             return token;
 
-        revertToCachedIndex();
+        reset();
         throw parseException();
     }
 
@@ -138,7 +148,7 @@ public class LexicalAnalyzer {
             next();
             switch (current) {
                 case '=':
-                    return newToken(TokenType.EQUAL, "==");
+                    return newToken(TokenType.COMPARISON, "==");
                 case '+':
                     return newToken(TokenType.INCREMENT, "++");
                 case '-':
@@ -160,34 +170,32 @@ public class LexicalAnalyzer {
             }
         }
 
-        // Single char
-        switch (current) {
-            case '+':
-                return newToken(TokenType.PLUS, "+");
-            case '-':
-                return newToken(TokenType.MINUS, "-");
-            case '*':
-                return newToken(TokenType.MULTIPLY, "*");
-            case '/':
-                return newToken(TokenType.DIVIDE, "/");
-            case '=':
-                return newToken(TokenType.ASSIGN, "=");
-            case '<':
-                return newToken(TokenType.LESS_THAN, "<");
-            case '>':
-                return newToken(TokenType.GREATER_THAN, ">");
-            case '^':
-                return newToken(TokenType.XOR, "^");
-            case '|':
-                return newToken(TokenType.OR, "|");
-            case '&':
-                return newToken(TokenType.AND, "&");
-            case '~':
-                return newToken(TokenType.INVERSE, "~");
-            case '%':
-                return newToken(TokenType.MODULO, "%");
+        if ((current == '>' || current == '<') && nextChar == '=') {
+            next();
+            return newToken(TokenType.COMPARISON, new String(new char[]{current, nextChar}));
+        } else if (current == '-' && nextChar == '>') {
+            next();
+            return newToken(TokenType.ARROW, "->");
+        } else if (current == '<' && nextChar == '-') {
+            next();
+            return newToken(TokenType.ASSIGN, "<-");
         }
-        throw parseException();
+
+        // Single char
+        return switch (current) {
+            case '+' -> newToken(TokenType.PLUS, "+");
+            case '-' -> newToken(TokenType.MINUS, "-");
+            case '*' -> newToken(TokenType.MULTIPLY, "*");
+            case '/' -> newToken(TokenType.DIVIDE, "/");
+            case '<' -> newToken(TokenType.COMPARISON, "<");
+            case '>' -> newToken(TokenType.COMPARISON, ">");
+            case '^' -> newToken(TokenType.XOR, "^");
+            case '|' -> newToken(TokenType.OR, "|");
+            case '&' -> newToken(TokenType.AND, "&");
+            case '~' -> newToken(TokenType.INVERSE, "~");
+            case '%' -> newToken(TokenType.MODULO, "%");
+            default -> throw parseException();
+        };
     }
 
     private @NotNull Token handleQuotedString() {
@@ -348,12 +356,12 @@ public class LexicalAnalyzer {
         return hasNext(false);
     }
 
-    private void cacheIndex() {
+    private void mark() {
         cachedLineIndex = lineIndex;
         cachedIndex = index;
     }
 
-    private void revertToCachedIndex() {
+    private void reset() {
         lineIndex = cachedLineIndex;
         index = cachedIndex;
     }
@@ -370,12 +378,12 @@ public class LexicalAnalyzer {
 
     @Contract("_, _ -> new")
     private @NotNull Token newToken(TokenType type, Object value) {
-        return new Token(type, value, cachedLineIndex, cachedIndex + 1);
+        return new Token(type, value, cachedLineIndex, cachedIndex + 1, whitespace);
     }
 
     @Contract("_ -> new")
     private @NotNull Token newToken(TokenType type) {
-        return new Token(type, cachedLineIndex, cachedIndex + 1);
+        return new Token(type, cachedLineIndex, cachedIndex + 1, whitespace);
     }
 
     public String getData() {
