@@ -2,6 +2,7 @@ package me.tud.weiner.parser;
 
 import me.tud.weiner.exception.ParseException;
 import me.tud.weiner.lang.Scope;
+import me.tud.weiner.lang.operation.Operator;
 import me.tud.weiner.lang.variable.VariableMap;
 import me.tud.weiner.lexer.token.Token;
 import me.tud.weiner.lexer.token.TokenGroup;
@@ -258,16 +259,14 @@ public class SyntaxParser {
     // expression: term | expression "+" term | expression "-" term
     public ExpressionNode<?> expression() {
         ExpressionNode<?> expression = term();
-        while (currentToken.is(TokenType.PLUS, TokenType.MINUS)) {
+        while (currentToken.is(TokenGroup.OPERATORS)) {
+            Operator operator = Operator.bySign(currentToken.value(String.class));
+            assert operator != null;
+            if (operator.order != Operator.Order.EXPRESSION)
+                break;
             Token token = currentToken;
             eat(token.type());
-            expression = new ArithmeticNode(convert(expression, Number.class), ArithmeticOperator.bySign(token.value(String.class)), convert(term(), Number.class));
-        }
-
-        if (currentToken.is(TokenType.COMPARISON)) {
-            ComparisonOperator operator = ComparisonOperator.bySign(currentToken.value(String.class));
-            eat(TokenType.COMPARISON);
-            return new ComparisonNode(convert(expression, Number.class), operator, convert(expression(), Number.class));
+            expression = new OperationNode(expression, operator, term());
         }
 
         while (currentToken.is(TokenType.L_BRACE)) {
@@ -285,10 +284,15 @@ public class SyntaxParser {
     // term: factor | term "*" factor | term "/" factor | term "%" factor
     public ExpressionNode<?> term() {
         ExpressionNode<?> term = factor();
-        while (currentToken.is(TokenType.MULTIPLY, TokenType.DIVIDE, TokenType.MODULO)) {
+        while (currentToken.is(TokenGroup.OPERATORS)) {
+            Operator operator = Operator.bySign(currentToken.value(String.class));
+            assert operator != null;
+            if (operator.order != Operator.Order.TERM) {
+                break;
+            }
             Token token = currentToken;
             eat(token.type());
-            term = new ArithmeticNode(convert(term, Number.class), ArithmeticOperator.bySign(token.value(String.class)), convert(factor(), Number.class));
+            term = new OperationNode(term, Operator.bySign(token.value(String.class)), factor());
         }
         return term;
     }
@@ -303,7 +307,7 @@ public class SyntaxParser {
             return new SignNode(convert(factor(), Number.class), token.is(TokenType.MINUS));
         } else if (token.is(TokenType.NEGATE)) {
             eat(TokenType.NEGATE);
-            return new NegateNode(factor());
+            return new NegateNode(convert(factor(), Boolean.class));
         } else if (token.is(TokenType.L_PAREN)) {
             eat(TokenType.L_PAREN);
             ExpressionNode<?> expression = expression();
@@ -319,7 +323,7 @@ public class SyntaxParser {
             eat(TokenType.BOOLEAN);
             return new LiteralBooleanNode(token.value(boolean.class));
         } else if (token.is(TokenType.IDENTIFIER)) {
-            if (peekTokenType() == TokenType.L_PAREN) {
+            if (peekTokenType() == TokenType.L_PAREN && !peek().hasWhitespace()) {
                 return functionCall();
             } else {
                 return new VariableNode(identifier());

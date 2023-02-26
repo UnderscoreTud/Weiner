@@ -85,10 +85,10 @@ public class LexicalAnalyzer {
             case '<':
             case '>':
             case '^':
-            case '|':
             case '&':
-            case '~':
+            case '|':
             case '%':
+            case '!':
                 return handleOperator();
             case '?':
                 return newToken(TokenType.IF, "?");
@@ -98,8 +98,6 @@ public class LexicalAnalyzer {
                 return newToken(TokenType.COLON, ":");
             case '@':
                 return newToken(TokenType.INDEX, "@");
-            case '!':
-                return newToken(TokenType.NEGATE, "!");
             case '"':
                 return handleQuotedString();
             case '.':
@@ -149,28 +147,16 @@ public class LexicalAnalyzer {
             switch (current) {
                 case '=':
                     return newToken(TokenType.COMPARISON, "==");
-                case '+':
-                    return newToken(TokenType.INCREMENT, "++");
-                case '-':
-                    return newToken(TokenType.DECREMENT, "--");
-                case '<':
-                    return newToken(TokenType.LEFT_SHIFT, "<<");
-                case '>':
-                    if (peek() == '>') {
-                        next();
-                        return newToken(TokenType.U_RIGHT_SHIFT, ">>>");
-                    }
-                    return newToken(TokenType.RIGHT_SHIFT, ">>");
-                case '|':
-                    return newToken(TokenType.DOUBLE_PIPE, "||");
                 case '&':
-                    return newToken(TokenType.DOUBLE_AMP, "&&");
+                    return newToken(TokenType.AND, "&&");
+                case '|':
+                    return newToken(TokenType.OR, "||");
                 default:
                     previous();
             }
         }
 
-        if ((current == '>' || current == '<') && nextChar == '=') {
+        if ((current == '!' || current == '<' || current == '>') && nextChar == '=') {
             next();
             return newToken(TokenType.COMPARISON, new String(new char[]{current, nextChar}));
         } else if (current == '-' && nextChar == '>') {
@@ -190,10 +176,8 @@ public class LexicalAnalyzer {
             case '<' -> newToken(TokenType.COMPARISON, "<");
             case '>' -> newToken(TokenType.COMPARISON, ">");
             case '^' -> newToken(TokenType.XOR, "^");
-            case '|' -> newToken(TokenType.OR, "|");
-            case '&' -> newToken(TokenType.AND, "&");
-            case '~' -> newToken(TokenType.INVERSE, "~");
             case '%' -> newToken(TokenType.MODULO, "%");
+            case '!' -> newToken(TokenType.NEGATE, "!");
             default -> throw parseException();
         };
     }

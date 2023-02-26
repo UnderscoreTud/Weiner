@@ -1,0 +1,1 @@
+$print((!(3 + 3 * 3 != 10) ^ true ^ true) && (true ^ true))

@@ -27,4 +27,13 @@ public class NumberUtil {
         return true;
     }
 
+    @SafeVarargs
+    public static boolean isInteger(Class<? extends Number>... numbers) {
+        for (Class<? extends Number> number : numbers) {
+            if (Double.class.isAssignableFrom(number) || Float.class.isAssignableFrom(number))
+                return false;
+        }
+        return true;
+    }
+
 }

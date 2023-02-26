@@ -21,8 +21,8 @@ public class DefaultFunctions {
         Functions.registerFunction(new JavaFunction<Number>(new Signature("pow", "n1", "n2")) {
             @Override
             public Number run(Object[] parameters) {
-                Number n1 = get(parameters[0], Number.class).orElse(0);
-                Number n2 = get(parameters[1], Number.class).orElse(0);
+                Number n1 = get(parameters[0], Number.class).orElse(0L);
+                Number n2 = get(parameters[1], Number.class).orElse(0L);
                 return Math.pow(n1.doubleValue(), n2.doubleValue());
             }
         });
@@ -30,8 +30,8 @@ public class DefaultFunctions {
         Functions.registerFunction(new JavaFunction<Number>(new Signature("rand", "from", "to")) {
             @Override
             public Number run(Object[] parameters) {
-                Number n1 = get(parameters[0], Number.class).orElse(0);
-                Number n2 = get(parameters[1], Number.class).orElse(0);
+                Number n1 = get(parameters[0], Number.class).orElse(0L);
+                Number n2 = get(parameters[1], Number.class).orElse(0L);
                 if (NumberUtil.isInteger(n1, n2)) {
                     long min = Math.min(n1.longValue(), n2.longValue());
                     long max = Math.max(n1.longValue(), n2.longValue());
@@ -47,8 +47,22 @@ public class DefaultFunctions {
         Functions.registerFunction(new JavaFunction<Number>(new Signature("sqrt", "n1")) {
             @Override
             public Number run(Object[] parameters) {
-                Number n = get(parameters[0], Number.class).orElse(0);
+                Number n = get(parameters[0], Number.class).orElse(0L);
                 return Math.sqrt(n.doubleValue());
+            }
+        });
+
+        Functions.registerFunction(new JavaFunction<Number>(new Signature("square", "n1")) {
+            @Override
+            public Number run(Object[] parameters) {
+                Number n = get(parameters[0], Number.class).orElse(0L);
+                if (NumberUtil.isInteger(n)) {
+                    long number = n.longValue();
+                    return number * number;
+                } else {
+                    double number = n.doubleValue();
+                    return number * number;
+                }
             }
         });
     }
