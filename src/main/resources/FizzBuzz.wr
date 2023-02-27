@@ -1,0 +1,13 @@
+$x <- 1
+$when x <= 100 {
+    ? (x % 3 == 0) && (x % 5 == 0) {
+        $print("FizzBuzz")
+    } else ? x % 3 == 0 {
+        $print("Fizz")
+    } else ? x % 5 == 0 {
+        $print("Buzz")
+    } else {
+        $print("")
+    }
+    $x <- x + 1
+}
