@@ -22,6 +22,11 @@ public final class DefaultOperations {
             return left.doubleValue() * right.doubleValue();
         });
         Operations.registerOperation(Operator.DIVISION, Number.class, (left, right) -> left.doubleValue() / right.doubleValue());
+        Operations.registerOperation(Operator.MODULO, Number.class, (left, right) -> {
+            if (NumberUtil.isInteger(left, right))
+                return left.longValue() % right.longValue();
+            return left.doubleValue() % right.doubleValue();
+        });
 
         Operations.registerOperation(Operator.EQUALS, Number.class, Number.class, Boolean.class, (left, right) -> NumberUtil.compare(left, right) == 0);
         Operations.registerOperation(Operator.NOT_EQUAL, Number.class, Number.class, Boolean.class, (left, right) -> NumberUtil.compare(left, right) != 0);

@@ -1,1 +1,9 @@
-$print((!(3 + 3 * 3 != 10) ^ true ^ true) && (true ^ true))
+$function isEven(x) {
+    ? x % 2 == 0 {
+        $giveback true
+    } else {
+        $giveback false
+    }
+}
+
+$print(isEven(3))

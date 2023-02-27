@@ -20,7 +20,8 @@ public class VariableNode extends ExpressionNode<Object> implements Settable<Obj
 
     @Override
     public void init() {
-        variable = variableMap.getVariable(identifier);
+        if (variable == null)
+            variable = variableMap.getVariable(identifier);
         if (variable == null)
             throw new VariableException("The variable '" + identifier + "' does not exist");
     }

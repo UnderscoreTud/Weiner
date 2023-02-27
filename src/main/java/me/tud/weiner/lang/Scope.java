@@ -20,17 +20,17 @@ public class Scope {
         this.variableMap = variableMap;
     }
 
-    public void increment() {
+    public void enter() {
         level++;
         variableMap = new VariableMap(variableMap);
     }
 
-    public void increment(int flags) {
+    public void enter(int flags) {
         level++;
         variableMap = new VariableMap(variableMap, flags);
     }
 
-    public void decrement() {
+    public void exit() {
         level--;
         variableMap.clear();
         variableMap = variableMap.getParentMap().orElseThrow(IllegalAccessError::new);

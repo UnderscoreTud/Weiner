@@ -33,7 +33,6 @@ public class OperationNode extends ExpressionNode<Object> {
                 || (leftClass != Object.class
                 && rightClass != Object.class
                 && (operationInfo = Operations.findOperation(operator, leftClass, rightClass)) == null)) {
-            System.out.println(Operations.findOperation(operator, leftClass, rightClass));
             throw new ParseException('\'' + operator.sign + "' can't be performed on " + leftClass.getSimpleName() + " and " + rightClass.getSimpleName(),
                     getParser().getCurrentToken());
         }

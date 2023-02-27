@@ -6,13 +6,9 @@ import org.jetbrains.annotations.Nullable;
 
 public class BlockNode extends ASTNode {
 
-    public static final int NO_RETURN = 0;
-    public static final int OPTIONAL_RETURN = 1;
-    public static final int REQUIRED_RETURN = 2;
-    public static final int RETURNABLE = OPTIONAL_RETURN | REQUIRED_RETURN;
-
     private final StatementNode[] statements;
-    private final int flags;
+    private @Nullable BlockNode outerBlock;
+    private boolean returnable;
     private ExpressionNode<?> returnExpression;
 
     public BlockNode() {
@@ -20,23 +16,49 @@ public class BlockNode extends ASTNode {
     }
 
     public BlockNode(StatementNode @NotNull [] statements) {
-        this(statements, NO_RETURN);
+        this(statements, false);
     }
 
-    public BlockNode(StatementNode @NotNull [] statements, int flags) {
+    public BlockNode(StatementNode @NotNull [] statements, boolean returnable) {
         this.statements = statements;
-        this.flags = flags;
+        this.returnable = returnable;
         setChildren(statements);
     }
 
-    public int getFlags() {
-        return flags;
+    @Override
+    public void init() {
+        super.init();
+        ASTNode node = getParent();
+        while (node != null) {
+            if (node instanceof BlockNode block) {
+                this.outerBlock = block;
+                break;
+            }
+            node = node.getParent();
+        }
+    }
+
+    public boolean isReturnable() {
+        return outerBlock != null && outerBlock.isReturnable() || returnable;
+    }
+
+    public void setReturnable(boolean returnable) {
+        this.returnable = returnable;
     }
 
     public void setReturnExpression(ExpressionNode<?> returnExpression) {
-        if ((flags & RETURNABLE) == 0)
+        if (!isReturnable())
             throw new ParseException("You can't return here", getParser().getCurrentToken());
         this.returnExpression = returnExpression;
+        if (outerBlock != null)
+            outerBlock.setReturnExpression(returnExpression);
+    }
+
+    public boolean hasReturned() {
+        return returnExpression != null;
+    }
+    public ExpressionNode<?> getReturnExpression() {
+        return returnExpression;
     }
 
     @Override

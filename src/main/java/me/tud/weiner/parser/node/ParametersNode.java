@@ -23,8 +23,8 @@ public class ParametersNode extends ASTNode {
     }
 
     @Override
-    public void init() {
-        super.init();
+    public void preLoad() {
+        super.preLoad();
         for (String identifier : identifiers)
             variableMap.declareVariable(identifier);
     }

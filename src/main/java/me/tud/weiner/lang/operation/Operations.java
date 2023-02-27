@@ -86,10 +86,10 @@ public final class Operations {
     @Nullable
     @SuppressWarnings("unchecked")
     public static <L, R, T> T calculate(Operator operator, L left, R right, Class<T> expectedReturnType) {
-        Operation<L, R, T> operation = (Operation<L, R, T>) findOperation(operator, left.getClass(), right.getClass(), expectedReturnType);
+        OperationInfo<L, R, T> operation = (OperationInfo<L, R, T>) findOperation(operator, left.getClass(), right.getClass(), expectedReturnType);
         if (operation == null)
             return null;
-        return operation.calculate(left, right);
+        return operation.getOperation().calculate(left, right);
     }
 
     public static <T> void registerDefaultValue(Class<T> type, Supplier<T> supplier) {

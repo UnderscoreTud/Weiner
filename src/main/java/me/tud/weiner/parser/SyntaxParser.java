@@ -8,8 +8,6 @@ import me.tud.weiner.lexer.token.Token;
 import me.tud.weiner.lexer.token.TokenGroup;
 import me.tud.weiner.lexer.token.TokenType;
 import me.tud.weiner.parser.node.*;
-import me.tud.weiner.util.ArithmeticOperator;
-import me.tud.weiner.util.ComparisonOperator;
 import me.tud.weiner.util.Dictionary;
 import me.tud.weiner.util.NumberUtil;
 
@@ -61,6 +59,12 @@ public class SyntaxParser {
             return control();
         } else if (token.is(TokenType.KEYWORD) && token.value(String.class).equals("function")) {
             return functionDeclaration();
+        } else if (token.is(TokenType.KEYWORD) && token.value(String.class).equals("giveback")) {
+            eat(TokenType.KEYWORD);
+            mark();
+            ExpressionNode<?> node = expression();
+            eat(TokenType.EOL);
+            return new GivebackNode(node);
         } else {
             mark();
             ExpressionNode<?> node = expression();
@@ -69,12 +73,12 @@ public class SyntaxParser {
                 eat(TokenType.EOL);
                 return assignment;
             }
-            if (!(node instanceof StatementExpression)) {
+            if (!(node instanceof StatementExpression expr)) {
                 reset();
                 throw new ParseException(token);
             }
             eat(TokenType.EOL);
-            return ((StatementExpression<?>) node).asStatement();
+            return expr.asStatement();
         }
     }
 
@@ -169,7 +173,7 @@ public class SyntaxParser {
         }
 
         if (increaseScope)
-            scope.increment();
+            scope.enter();
 
         List<StatementNode> statements = new LinkedList<>();
         while (!currentToken.is(TokenType.R_CURLY_BRACE))
@@ -177,7 +181,7 @@ public class SyntaxParser {
         BlockNode block = new BlockNode(statements.toArray(new StatementNode[0]));
 
         if (increaseScope)
-            scope.decrement();
+            scope.exit();
 
         eat(TokenType.R_CURLY_BRACE);
         return block;
@@ -191,12 +195,13 @@ public class SyntaxParser {
 
         eat(TokenType.L_PAREN, true);
         ParametersNode parameters;
-        scope.increment(VariableMap.LENIENT);
+        scope.enter(VariableMap.LENIENT);
         parameters = currentToken.is(TokenType.R_PAREN) ? new ParametersNode() : parameters();
         eat(TokenType.R_PAREN);
 
         BlockNode block = block(false);
-        scope.decrement();
+        block.setReturnable(true);
+        scope.exit();
         return new FunctionDeclarationNode(identifier, parameters, block);
     }
 

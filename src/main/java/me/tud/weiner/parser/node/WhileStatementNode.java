@@ -19,10 +19,12 @@ public class WhileStatementNode extends LoopNode {
     @Override
     protected void runLoop() {
         block.evaluate();
+        if (block.hasReturned())
+            stop();
     }
 
     @Override
-    protected Number incrementIndex() {
+    protected Number incrementBy() {
         return 1;
     }
 
