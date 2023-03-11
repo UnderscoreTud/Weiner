@@ -8,7 +8,7 @@ public class SignNode extends ExpressionNode<Number> {
     private final ExpressionNode<Number> number;
     private final boolean negate;
 
-    public <T> SignNode(ExpressionNode<Number> number, boolean negate) {
+    public SignNode(ExpressionNode<Number> number, boolean negate) {
         this.number = number;
         this.negate = negate;
         setChildren(number);
