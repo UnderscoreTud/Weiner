@@ -12,7 +12,6 @@ public enum TokenType {
     DIVIDE,
     DOUBLE_DOT,
     EOF,
-    EOL,
     IDENTIFIER,
     IF,
     INDEX,
@@ -33,6 +32,5 @@ public enum TokenType {
     STATEMENT,
     STRING,
     XOR
-
 
 }
