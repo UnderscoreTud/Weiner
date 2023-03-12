@@ -39,7 +39,7 @@ public class DefaultFunctions {
                 } else {
                     double min = Math.min(n1.doubleValue(), n2.doubleValue());
                     double max = Math.max(n1.doubleValue(), n2.doubleValue());
-                    return ThreadLocalRandom.current().nextDouble(min, max + 1);
+                    return min + ThreadLocalRandom.current().nextDouble() * (max - min);
                 }
             }
         });

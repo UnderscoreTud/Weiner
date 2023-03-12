@@ -46,14 +46,9 @@ public class SyntaxParser {
     // Grammar:
     // statement: control | function_declaration | assignment | statement_expression
     private StatementNode statement() {
-        if (!currentToken.is(TokenType.IF, TokenType.EOL))
+        if (!currentToken.is(TokenType.IF))
             eat(TokenType.STATEMENT);
         Token token = currentToken;
-
-        if (token.is(TokenType.EOL)) {
-            eat(TokenType.EOL);
-            return new EmptyNode();
-        }
 
         if (token.is(TokenType.IF) || (token.is(TokenType.KEYWORD) && (token.value(String.class).equals("when") || token.value(String.class).equals("for")))) {
             return control();
@@ -63,21 +58,17 @@ public class SyntaxParser {
             eat(TokenType.KEYWORD);
             mark();
             ExpressionNode<?> node = expression();
-            eat(TokenType.EOL);
             return new GivebackNode(node);
         } else {
             mark();
             ExpressionNode<?> node = expression();
-            if (currentToken.is(TokenType.ASSIGN, TokenType.ARROW)) {
-                AssignmentNode assignment = assignment(node);
-                eat(TokenType.EOL);
-                return assignment;
-            }
+            if (currentToken.is(TokenType.ASSIGN, TokenType.ARROW))
+                return assignment(node);
+
             if (!(node instanceof StatementExpression expr)) {
                 reset();
                 throw new ParseException(token);
             }
-            eat(TokenType.EOL);
             return expr.asStatement();
         }
     }
@@ -147,6 +138,14 @@ public class SyntaxParser {
 
             {
                 setChildren(expression);
+            }
+
+            @Override
+            public void init() {
+                super.init();
+                Class<?> returnType = expression.getReturnType();
+                if (returnType != Object.class && returnType != Boolean.class)
+                    throw ParseException.expected(Boolean.class, returnType, getParser().getCurrentToken());
             }
 
             @Override
@@ -349,7 +348,6 @@ public class SyntaxParser {
             eat(TokenType.L_CURLY_BRACE, true);
             HashMap<String, ExpressionNode<?>> map = new HashMap<>();
             while (true) {
-                eat(TokenType.EOL);
                 mark();
                 String key = currentToken.value(String.class);
                 eat(TokenType.STRING);
@@ -364,7 +362,6 @@ public class SyntaxParser {
                     break;
                 eat(TokenType.COMMA);
             }
-            eat(TokenType.EOL);
             eat(TokenType.R_CURLY_BRACE);
             return new DictionaryNode(map);
         } else {

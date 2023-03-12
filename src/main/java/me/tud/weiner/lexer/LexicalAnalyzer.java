@@ -45,8 +45,6 @@ public class LexicalAnalyzer {
             whitespace = false;
             tokenList.add(token);
         } while (!token.is(TokenType.EOF));
-        tokenList.add(tokenList.size() - 1, newToken(TokenType.EOL));
-//        System.out.println(tokenList);
         return tokenList;
     }
 
@@ -56,15 +54,13 @@ public class LexicalAnalyzer {
 
         char current = next();
 
-        while (Character.isWhitespace(current) && current != '\n') {
+        while (Character.isWhitespace(current)) {
             whitespace = true;
             current = next();
         }
         mark();
 
         switch (current) {
-            case '\n':
-                return newToken(TokenType.EOL);
             case '{':
                 return newToken(TokenType.L_CURLY_BRACE, "{");
             case '}':
@@ -328,8 +324,7 @@ public class LexicalAnalyzer {
 
     private void handleNewLine() {
         index = 0;
-        lineIndex++;
-        line = lines.get(lineIndex - 1);
+        line = lines.get(lineIndex++);
     }
 
     private boolean hasNext(boolean currentLine) {

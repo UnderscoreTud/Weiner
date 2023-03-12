@@ -1,9 +1,3 @@
-$function isEven(x) {
-    ? x % 2 == 0 {
-        $giveback true
-    } else {
-        $giveback false
-    }
+$for 1..4 {
+    $print("hello")
 }
-
-$print(isEven(3))
